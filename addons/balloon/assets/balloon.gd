@@ -1,3 +1,4 @@
+tool
 ######################################################################################################
 #
 #                   This work is licensed under a Creative Commons Attribution 4.0
@@ -33,7 +34,7 @@ export(Font) var normal_font
 #export(Font) var italics_font
 #export(Font) var bold_italics_font
 #export(Font) var mono_font
-export(String) var lock_target = null
+export(NodePath) var lock_target = null
 export(int) var words_per_minute = 200 # world median words readed by minute
 export(bool) var auto_hide = true
 

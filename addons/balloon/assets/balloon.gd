@@ -1,3 +1,4 @@
+tool
 ######################################################################################################
 #
 #                   This work is licensed under a Creative Commons Attribution 4.0
@@ -33,10 +34,11 @@ export(Font) var normal_font
 #export(Font) var italics_font
 #export(Font) var bold_italics_font
 #export(Font) var mono_font
-export(String) var lock_target = null
+export(NodePath) var lock_target = null
 export(int) var words_per_minute = 200 # world median words readed by minute
 export(bool) var auto_hide = true
 
+export var show_debug_messages = false
 
 var vertices = Array()
 var colors = Array()
@@ -63,7 +65,8 @@ func target(obj):
 	var c = obj.get_class()
 	while true:
 		var p = ClassDB.get_parent_class(c)
-		printt('obj', c, p)
+		if show_debug_messages:
+			printt('object class: ', c, "\nparent class: ",p)
 		if c=='Spatial' or p=='Spatial':
 			_is3D = true
 			break
@@ -139,8 +142,10 @@ func render_text(txt):
 	for k in arr1:
 		var tk
 		if k.find("\n")>-1:
-			for k2 in k.split("\n"):
-				print(k2)
+			if show_debug_messages:
+				for k2 in k.split("\n"):
+					
+					print(k2)
 		else:
 			tk = k
 			letters += tk.length() + 1
@@ -184,10 +189,11 @@ func render_text(txt):
 		var c = -x*0.5 # (2.0*rad - x)*0.5
 		#draw_string( font, Vector2(c,y), st, Color(0,0,0,1) )
 		lines.append([c,st,font.get_height()])
-				
-		#printt(font.get_string_size(" "))
+		if show_debug_messages:
+			printt("String size is: ", font.get_string_size(" "))
 		y += font.get_height() * _ratio.x
-		printt(corda,x, x*_ratio.y*0.5, rad,st, _ratio)
+		if show_debug_messages:
+			printt(corda,x, x*_ratio.y*0.5, rad,st, _ratio)
 		if (x*_ratio.y*0.5 + padding) > c_rad:
 			c_rad = rad + ((x*_ratio.y*0.5 + padding) - rad)
 	y -= font.get_descent() / 2.0
@@ -199,7 +205,8 @@ func render_text(txt):
 	
 	#if c_rad != rad:
 	#	rad = c_rad
-	print(rad)
+	if show_debug_messages:
+		print(rad)
 	
 	# render ballon
 	var resolution = 48.0

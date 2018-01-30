@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=2]
 
-[ext_resource path="res://assets/balloon/baloon.gd" type="Script" id=1]
+[ext_resource path="res://addons/balloon/assets/balloon.gd" type="Script" id=1]
 
 [node name="balloon" type="Control"]
 
@@ -17,7 +17,7 @@ size_flags_horizontal = 1
 size_flags_vertical = 1
 script = ExtResource( 1 )
 _sections_unfolded = [ "BBCode" ]
-text = ""
+text = "Testing the script"
 ratio = 1.0
 font_height_adjust = 0
 padding = 8
@@ -33,5 +33,7 @@ words_per_minute = 200
 auto_hide = true
 
 [node name="target" type="Position2D" parent="." index="0"]
+
+_sections_unfolded = [ "Transform" ]
 
 

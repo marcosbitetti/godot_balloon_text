@@ -1,6 +1,6 @@
 # godot_balloon_text
 
-<img src="https://raw.githubusercontent.com/marcosbitetti/godot_balloon_text/master/assets/balloon/ico.png" alt="logo" style="width: 128px; height: 128px; display: block;" />
+<img src="https://raw.githubusercontent.com/marcosbitetti/godot_balloon_text/master/addons/balloon/assets/ico.png" alt="logo" style="width: 128px; height: 128px; display: block;" />
 
 For anyone that love comics/manga.
 A asset to handle text in a comic balloon.

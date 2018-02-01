@@ -2,9 +2,9 @@ tool
 extends EditorPlugin
 
 func _enter_tree():
-    add_custom_type("Ballon Text", "Control", preload("assets/balloon.gd"), preload("ico.png"))
+    add_custom_type("Balloon Text", "Control", preload("balloon.gd"), preload("assets/icon_balloon.png"))
     pass
 
 func _exit_tree():
-	remove_custom_type("Ballon Text")
+	remove_custom_type("Balloon Text")
 	pass

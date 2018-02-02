@@ -73,9 +73,20 @@ func target(obj):
 		elif c=='Node2D' or p=='Node2D':
 			_is3D = false
 			break
+		elif c=='Control' or p=='Control':
+			var nd = Node2D.new()
+			nd.position = obj.rect_size / 2.0
+			nd.set_meta('balloon_arrow_target',true)
+			obj.add_child(nd)
+			obj = nd
+			break
 		c = p
 		if p=='Object':
 			break
+		
+	if arrow_target:
+		if arrow_target.get_meta('balloon_arrow_target'):
+			arrow_target.queue_free()			
 	arrow_target = obj
 	
 	if obj:
@@ -249,10 +260,6 @@ func render_text(txt):
 	
 	return words.size()
 
-# a b c d e f g h i j k l m n o p q r s t u v w x y z A B C D E F G H I J K L M N O P Q R S T U V X Y Z
-# Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
-# But the Raven, sitting lonely on the placid bust, spoke only That one word, as if his soul in that one word he did outpour. Nothing farther then he uttered—not a feather then he fluttered—Till I scarcely more than muttered “Other friends have flown before—On the morrow he will leave me, as my Hopes have flown before.” Then the bird said “Nevermore.”
-
 func _draw():
 	if Engine.editor_hint:
 		#draw_circle( Vector2(0,0), 12.0, Color("#a5efacff") )
@@ -272,7 +279,7 @@ func _draw():
 	# draw arrow
 	var _t = _arrow_target
 	if not arrow_target:
-		_t = Vector2( 0,rad*1.45  * _ratio.y )
+		_t = Vector2( 0,0 )
 	var nor = _t.normalized()
 	var per = Vector2(-nor.y,nor.x)
 	_arrow_vertices[0] = _t
@@ -316,12 +323,10 @@ func _draw():
 
 func _process(delta):
 	if arrow_target:
-		print(arrow_target)
 		if _is3D:
 			_arrow_target = get_viewport().get_camera().unproject_position(arrow_target.global_transform.origin) - get_global_transform().origin
 		else:
 			_arrow_target = arrow_target.global_position - get_global_transform().origin
-		
 		if _arrow_target != old_tg_pos:
 			old_tg_pos = _arrow_target
 			update()
@@ -362,7 +367,10 @@ func _ready():
 	
 	# if lock target exist set arrow to it
 	if lock_target:
-		var obj = get_node(lock_target)
+		var lt = String(lock_target)
+		if lt.find('/') != 0:
+			lt = '../' + lt
+		var obj = get_node(lt)
 		if obj:
 			target(obj)
 	

@@ -19,26 +19,28 @@ extends Control
 
 # font normal_font bold_font italics_font bold_italics_font mono_font default_color 
 
-export(String) var text = ""
-export(float) var ratio = 1.0
-export(float) var font_height_adjust = 0
-export(float) var padding = 8
-export(float) var shadown_width = 4
-export(Color) var text_color = Color(0,0,0,1)
-export(Color) var color = Color(1,1,1,1)
-export(Color) var color_center = Color(1,1,1,1)
-export(Color) var color_shadow = Color(0,0,0,1)
-export(float) var arrow_width = 0.25
-export(Font) var normal_font
+export(String) var text = "" setget _set_text
+export(float) var ratio = 1.0 setget _set_ratio
+export(int) var font_height_adjust = 0 setget _set_font_height_adjust
+export(int) var padding = 8 setget _set_padding
+export(int) var shadown_width = 4 setget _set_shadown_width
+export(Color) var text_color = Color(0,0,0,1) setget _set_text_color
+export(Color) var color = Color(1,1,1,1) setget _set_color
+export(Color) var color_center = Color(1,1,1,1) setget _set_color_center
+export(Color) var color_shadow = Color(0,0,0,1) setget _set_color_shadow
+export(float) var arrow_width = 0.25 setget _set_arrow_width
+export(Font) var normal_font = null setget _set_font
 #export(Font) var bold_font
 #export(Font) var italics_font
 #export(Font) var bold_italics_font
 #export(Font) var mono_font
-export(NodePath) var lock_target = null
+export(NodePath) var lock_target = null setget _set_target
 export(int) var words_per_minute = 200 # world median words readed by minute
 export(bool) var auto_hide = true
 
 export var show_debug_messages = false
+
+const RESOLUTION = 48.0
 
 var vertices = Array()
 var colors = Array()
@@ -59,6 +61,92 @@ var delay = 0
 var is_opened = false
 var _stream = null
 
+####################
+#
+#  Gettes/Setters
+#
+####################
+
+# helper to dismiss a lot of this same IF
+func __need_update():
+	if text and text.length()>0:
+		render_text(text)
+	update()
+	
+# set target from string
+func _set_target(name=""):
+	if not name or name=="":
+		lock_target = null
+		arrow_target = null
+		_arrow_target = Vector2()
+		update()
+		return
+		
+	var lt = str(name)
+	if lt.find('/') != 0:
+		lt = '../' + lt
+	var obj = get_node(lt)
+	if obj:
+		target(obj)
+		update()
+	lock_target = name
+
+func _set_text(txt):
+	if not txt:
+		txt = ""
+	text = txt
+	if txt == "" and not Engine.editor_hint:
+		hide()
+	else:
+		render_text(txt)
+		update()
+
+func _set_font(fnt):
+	if not fnt:
+		print('a ',.get_font('font'))
+		fnt = .get_font('font')
+	normal_font = fnt
+	__need_update()
+
+func _get_font():
+	#return get_font('normal_font')
+	normal_font
+
+func _set_ratio(r):
+	ratio = float(r)
+	__need_update()
+	
+func _set_padding(p):
+	padding = float(p)
+	__need_update()
+
+func _set_font_height_adjust(v):
+	font_height_adjust = float(v)
+	__need_update()
+
+func _set_shadown_width(w):
+	shadown_width = float(w)
+	__need_update()
+	
+func _set_text_color(c):
+	text_color = c
+	__need_update()
+
+func _set_color(c):
+	color = c
+	__need_update()
+
+func _set_color_center(c):
+	color_center = c
+	__need_update()	
+
+func _set_color_shadow(c):
+	color_shadow = c
+	__need_update()
+
+func _set_arrow_width(w):
+	arrow_width = float(w)
+	__need_update()
 #
 # set a target object
 func target(obj):
@@ -93,6 +181,7 @@ func target(obj):
 		set_process(true)
 	else:
 		set_process(false)
+
 
 #
 # Render spoked text
@@ -165,6 +254,9 @@ func render_text(txt):
 	
 	# area
 	font = get_font("normal_font")
+	if not font:
+		font = .get_font('font')
+	
 	var _area = font.get_string_size(longString)
 	area = float(_area.x * _area.y)
 	rad = sqrt(float(area) / PI) * 1.00 + font.get_height()
@@ -220,7 +312,7 @@ func render_text(txt):
 		print(rad)
 	
 	# render ballon
-	var resolution = 48.0
+	var resolution = RESOLUTION
 	var a = (PI*2)/resolution
 	var p = padding * font.get_string_size(" ").y
 	vertices.clear()
@@ -261,15 +353,26 @@ func render_text(txt):
 	return words.size()
 
 func _draw():
-	if Engine.editor_hint:
-		#draw_circle( Vector2(0,0), 12.0, Color("#a5efacff") )
-		draw_texture( preload("res://addons/balloon/assets/icon_balloon.png"), Vector2(-8,-8), Color(1,1,1,1) )
-		#draw_string( .get_font('font'), Vector2(0,16), str(rect_global_position.x).pad_decimals(0) + '/' + str(rect_global_position.y).pad_decimals(0) )
-		#draw_string( .get_font('font'), Vector2(0,26), "Balloon" )
-		return
-		
 	var _ratio = Vector2(1.0/ratio, ratio)
-	
+	if Engine.editor_hint:
+		draw_texture( preload("res://addons/balloon/assets/icon_balloon.png"), Vector2(-8,-8), Color(1,1,1,1) )
+		if text=="":
+			var cr = Color("#a5efac")
+			#cr.a = 0.4
+			#if rad>0:
+			#	var r = rad #+ padding
+			#	var a = 0
+			#	var p = (PI*2.0) / RESOLUTION
+			#	var v = Vector2(rad,0) * _ratio
+			#	for i in range(RESOLUTION):
+			#		a += p
+			#		var n = Vector2( rad*cos(a), rad*sin(a) ) * _ratio
+			#		draw_line( v,n,cr,2 )
+			#		v = n
+			if arrow_target:
+				draw_line( Vector2(-3,9), _arrow_target, Color("#a5efac"), 1 )
+			return
+		
 	var _arrow_vertices = [Vector2(),Vector2(),Vector2()]
 	var _arrow_colors = [color,color,color]
 	var _arrow_vertices_shadow = [Vector2(),Vector2(),Vector2()]
@@ -304,20 +407,19 @@ func _draw():
 	draw_set_transform(_offset, 0, Vector2(1,1))
 	
 	# shadow
+	draw_primitive( _arrow_vertices_shadow, _arrow_colors_shadow, _arrow_uvs, null)
 	for i in range(vertices.size()):
 		draw_primitive( vertices_shadow[i],colors_shadow[i],uvs[i],null )
-	draw_primitive( _arrow_vertices_shadow, _arrow_colors_shadow, _arrow_uvs, null)
 	
 	# background
+	draw_primitive( _arrow_vertices, _arrow_colors, _arrow_uvs, null)
 	for i in range(vertices.size()):
 		draw_primitive( vertices[i],colors[i],uvs[i],null )
-	draw_primitive( _arrow_vertices, _arrow_colors, _arrow_uvs, null)
-	
 	
 	# text
 	var y = globalY
 	for l in lines:
-		draw_string(font,Vector2(l[0],y),l[1], Color(0,0,0,1))
+		draw_string(font,Vector2(l[0],y),l[1], text_color)
 		y += l[2]
 		
 
@@ -345,14 +447,17 @@ func _rec_changed():
 	#update()
 	pass
 
-func _ready():
-	if Engine.editor_hint:
+func _force_update():
+	if lock_target:
+		_set_target(lock_target)
+	else:
 		update()
-		connect("item_rect_changed",self,"_rec_changed")
-		return
-	
+	print('force')
+
+func _ready():
 	if not normal_font:
-		normal_font = .get_font('font')
+		#normal_font = .get_font('font')
+		self.normal_font = .get_font('font')
 	#if not bold_font:
 	#	bold_font = .get_font('font')
 	#if not italics_font:
@@ -367,15 +472,18 @@ func _ready():
 	
 	# if lock target exist set arrow to it
 	if lock_target:
-		var lt = String(lock_target)
-		if lt.find('/') != 0:
-			lt = '../' + lt
-		var obj = get_node(lt)
-		if obj:
-			target(obj)
+		_set_target(lock_target)
+	
+	if Engine.editor_hint:
+		update()
+		connect("item_rect_changed",self,"_rec_changed")
+		return
 	
 	#rect_min_size = Vector2(500,500)
 	if text and text.length()>0:
-		say(text)
+		if Engine.editor_hint:
+			_set_text(text)
+		else:
+			say(text)
 	else:
 		hide()

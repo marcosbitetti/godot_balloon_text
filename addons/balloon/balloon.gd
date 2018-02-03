@@ -60,7 +60,8 @@ var _arrow_target = Vector2()
 var delay = 0
 var is_opened = false
 var _stream = null
-var _text_ctrl = Control.new()
+var _surface1 = preload("background.tscn").instance()
+var _surface2 = preload("foreground.tscn").instance()
 
 ####################
 #
@@ -419,22 +420,24 @@ func _draw():
 	draw_set_transform(_offset, 0, Vector2(1,1))
 	
 	# shadow
-	draw_primitive( _arrow_vertices_shadow, _arrow_colors_shadow, _arrow_uvs, null)
-	for i in range(vertices.size()):
-		draw_primitive( vertices_shadow[i],colors_shadow[i],uvs[i],null )
+	#draw_primitive( _arrow_vertices_shadow, _arrow_colors_shadow, _arrow_uvs, null)
+	#for i in range(vertices.size()):
+	#	draw_primitive( vertices_shadow[i],colors_shadow[i],uvs[i],null )
 	
 	# background
-	draw_primitive( _arrow_vertices, _arrow_colors, _arrow_uvs, null)
-	for i in range(vertices.size()):
-		draw_primitive( vertices[i],colors[i],uvs[i],null )
+	#draw_primitive( _arrow_vertices, _arrow_colors, _arrow_uvs, null)
+	#for i in range(vertices.size()):
+	#	draw_primitive( vertices[i],colors[i],uvs[i],null )
+	
+	#_surface2.of = of
+	_surface1.ex_update(vertices,colors,uvs,vertices_shadow,colors_shadow,_arrow_vertices,_arrow_colors,_arrow_uvs,_arrow_vertices_shadow,_arrow_colors_shadow)
+	_surface2.ex_update(font,lines,globalY,text_color,of)
 	
 	# text
-	var y = globalY
-	for l in lines:
-		draw_string(font,Vector2(l[0],y)+of,l[1], text_color)
-		y += l[2]
-		
-	_text_ctrl.draw_string(normal_font, Vector2(0,0), "HEEELLLO", Color(1,0,0,1))
+	#var y = globalY
+	#for l in lines:
+	#	draw_string(font,Vector2(l[0],y)+of,l[1], text_color)
+	#	y += l[2]
 		
 
 func _process(delta):
@@ -484,8 +487,9 @@ func _ready():
 	#if not mono_font:
 	#	mono_font = .get_font('font')
 	
-	#_text_ctrl._draw = self._overwrite_draw
-	add_child(_text_ctrl)
+	# surfaces
+	add_child(_surface1)
+	add_child(_surface2)
 	
 	# prevent wrong initialization
 	set_process(false)

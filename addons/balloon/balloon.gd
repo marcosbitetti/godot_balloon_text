@@ -37,6 +37,8 @@ export(Font) var normal_font = null setget _set_font
 export(NodePath) var lock_target = null setget _set_target
 export(int) var words_per_minute = 200 # world median words readed by minute
 export(bool) var auto_hide = true
+export(Material) var balloon_material = null setget _set_balloon_material
+export(Material) var text_material = null setget _set_text_material
 
 export var show_debug_messages = false
 
@@ -158,6 +160,19 @@ func _set_color_shadow(c):
 func _set_arrow_width(w):
 	arrow_width = float(w)
 	__need_update()
+
+func _set_balloon_material(m):
+	if _surface1:
+		_surface1.material = m
+	balloon_material = m
+	__need_update()
+
+func _set_text_material(m):
+	if _surface2:
+		_surface2.material = m
+	text_material = m
+	__need_update()
+
 #
 # set a target object
 func target(obj):
@@ -332,7 +347,7 @@ func render_text(txt):
 	#arrow_index = vertices.size()
 	vertices.append( [Vector2(0,0),Vector2(0,0),Vector2(0,0)] )
 	colors.append( [color_center,color,color] )
-	uvs.append([Vector2(0,0),Vector2(0,0),Vector2(0,0)])
+	uvs.append([Vector2(0.5,0.5),Vector2(0.5,0.5),Vector2(0.5,0.5)])
 	var _rad = rad + padding
 	for i in range(resolution):
 		var x0 = rad*_ratio.x + cos(a*i)*_rad * _ratio.x
@@ -341,7 +356,7 @@ func render_text(txt):
 		var y1 = rad*_ratio.y + sin((a*i)+a)*_rad * _ratio.y
 		vertices.push_back( [Vector2(rad*_ratio.x,rad*_ratio.y), Vector2(x0,y0), Vector2(x1,y1)] )
 		colors.push_back( [color_center,color,color] )
-		uvs.push_back([Vector2(0,0),Vector2(0,0),Vector2(0,0)])
+		uvs.push_back([Vector2(0.5,0.5),Vector2(0.5+cos(a*i)*0.5,0.5+sin(a*i)*0.5),Vector2(0.5+cos((a*i)+a)*0.5,0.5+sin((a*i)+a)*0.5)])
 	
 	a = (PI*2)/resolution
 	vertices_shadow.clear()
@@ -403,11 +418,17 @@ func _draw():
 	var nor = (_t - of).normalized()
 	var per = Vector2(-nor.y,nor.x)
 	_arrow_vertices[0] = _t - shadown_width*nor
-	_arrow_vertices[1] = per * rad * arrow_width*_ratio + of
-	_arrow_vertices[2] = per * -rad * arrow_width*_ratio + of
+	_arrow_vertices[1] = per * _ratio * (rad+padding) * arrow_width + of
+	_arrow_vertices[2] = per * _ratio * (-rad-padding) * arrow_width + of
 	_arrow_vertices_shadow[0] = _t + shadown_width * nor
-	_arrow_vertices_shadow[1] = per * rad * arrow_width * _ratio + per * shadown_width*_ratio.x + of
-	_arrow_vertices_shadow[2] = per * -rad * arrow_width * _ratio - per * shadown_width*_ratio.x + of
+	_arrow_vertices_shadow[1] = per * (rad+padding) * arrow_width * _ratio + per * shadown_width*_ratio.x + of
+	_arrow_vertices_shadow[2] = per * (-rad-padding) * arrow_width * _ratio - per * shadown_width*_ratio.x + of
+	nor = (_t - of).normalized() #_t.normalized()
+	per = Vector2(-nor.y,nor.x)
+	_arrow_uvs[0] = Vector2(0.5,0.5) + nor*((((_t-of)).length()-padding-rad)/rad)*0.5 #+ nor*0.5
+	#_arrow_uvs[0] = Vector2(0.5,0.5) + nor*0.5
+	_arrow_uvs[1] = Vector2(0.5,0.5) + per * arrow_width * 0.5
+	_arrow_uvs[2] = Vector2(0.5,0.5) - per * arrow_width * 0.5
 	
 	# adjust to fit screen
 	_offset = Vector2()

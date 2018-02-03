@@ -53,6 +53,7 @@ var _arrow_vertices_shadow = Array()
 var _arrow_colors_shadow = Array()
 var _arrow_uvs = Array()
 var of = Vector2()
+var _offset = Vector2()
 var area = 0.0
 var rad = 0.0
 var font = Font.new()
@@ -409,7 +410,7 @@ func _draw():
 	_arrow_vertices_shadow[2] = per * -rad * arrow_width * _ratio - per * shadown_width*_ratio.x + of
 	
 	# adjust to fit screen
-	var _offset = Vector2()
+	_offset = Vector2()
 	var left_top = rect_global_position #- extra_offset
 	var right_bottom = rect_global_position + extra_offset*2.0
 	if left_top.x<(padding + shadown_width):

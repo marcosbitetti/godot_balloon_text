@@ -11,7 +11,9 @@ func ex_update(p):
 	
 func _draw():
 	if not p:
-		return print('no exsst')
+		return
+	
+	draw_set_transform(p._offset, 0, Vector2(1,1))
 		
 	var y = p.globalY
 	for l in p.lines:

@@ -12,7 +12,9 @@ func ex_update(p):
 func _draw():
 	if not p:
 		return
-		
+	
+	draw_set_transform(p._offset, 0, Vector2(1,1))
+	
 	# shadow
 	draw_primitive( p._arrow_vertices_shadow, p._arrow_colors_shadow, p._arrow_uvs, null)
 	for i in range(p.vertices.size()):

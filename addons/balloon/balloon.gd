@@ -47,6 +47,12 @@ var colors = Array()
 var vertices_shadow = Array()
 var colors_shadow = Array() 
 var uvs = Array()
+var _arrow_vertices = Array()
+var _arrow_colors = Array()
+var _arrow_vertices_shadow = Array()
+var _arrow_colors_shadow = Array()
+var _arrow_uvs = Array()
+var of = Vector2()
 var area = 0.0
 var rad = 0.0
 var font = Font.new()
@@ -60,9 +66,11 @@ var _arrow_target = Vector2()
 var delay = 0
 var is_opened = false
 var _stream = null
-var _surface1 = preload("background.tscn").instance()
-var _surface2 = preload("foreground.tscn").instance()
+#var _surface1 = preload("res://addons/balloon/background.tscn").instance()
+var _surface1 = preload("res://addons/balloon/surface1.gd").new()
+var _surface2 = preload("res://addons/balloon/surface2.gd").new()
 
+	
 ####################
 #
 #  Gettes/Setters
@@ -356,11 +364,6 @@ func render_text(txt):
 		var s = Vector2(round(rad*2),round(rad*2))*_ratio
 		s = Vector2(int(s.x),int(s.y))
 		rect_size = s
-		
-		print(s)
-		print(EditorInterface.get_editor_selection())
-		#rect_min_size = Vector2(1,1)
-		#set("rect/size",Vector2(round(rad),round(rad))*_ratio)
 	
 	return words.size()
 
@@ -385,14 +388,14 @@ func _draw():
 				draw_line( Vector2(-3,7) + rect_size*0.5, _arrow_target, Color("#a5efac"), 1 )
 			return
 		
-	var _arrow_vertices = [Vector2(),Vector2(),Vector2()]
-	var _arrow_colors = [color,color,color]
-	var _arrow_vertices_shadow = [Vector2(),Vector2(),Vector2()]
-	var _arrow_colors_shadow = [color_shadow,color_shadow,color_shadow]
-	var _arrow_uvs = [Vector2(0,0),Vector2(0,0),Vector2(0,0)]
+	_arrow_vertices = [Vector2(),Vector2(),Vector2()]
+	_arrow_colors = [color,color,color]
+	_arrow_vertices_shadow = [Vector2(),Vector2(),Vector2()]
+	_arrow_colors_shadow = [color_shadow,color_shadow,color_shadow]
+	_arrow_uvs = [Vector2(0,0),Vector2(0,0),Vector2(0,0)]
 	
 	# draw arrow
-	var of = Vector2(rad*_ratio.x,rad*_ratio.y)
+	of = Vector2(rad*_ratio.x,rad*_ratio.y)
 	var _t = _arrow_target
 	if not arrow_target:
 		_t = Vector2( 0,0 )
@@ -430,15 +433,26 @@ func _draw():
 	#	draw_primitive( vertices[i],colors[i],uvs[i],null )
 	
 	#_surface2.of = of
-	_surface1.ex_update(vertices,colors,uvs,vertices_shadow,colors_shadow,_arrow_vertices,_arrow_colors,_arrow_uvs,_arrow_vertices_shadow,_arrow_colors_shadow)
-	_surface2.ex_update(font,lines,globalY,text_color,of)
+	#printt(_surface1,_surface1.ex_update)
+	#_surface1.ex_update(vertices,colors,uvs,vertices_shadow,colors_shadow,_arrow_vertices,_arrow_colors,_arrow_uvs,_arrow_vertices_shadow,_arrow_colors_shadow)
+	#_surface2.ex_update(font,lines,globalY,text_color,of)
+	#_surface1.update()
+	#_surface2.update()
+	if _surface1:
+		if Engine.editor_hint:
+			_surface1.emit_signal("draw")
+			_surface2.emit_signal("draw")
+		else:
+			_surface1.ex_update(self)
+			_surface2.ex_update(self)
 	
 	# text
 	#var y = globalY
 	#for l in lines:
 	#	draw_string(font,Vector2(l[0],y)+of,l[1], text_color)
 	#	y += l[2]
-		
+
+
 
 func _process(delta):
 	if arrow_target:
@@ -469,10 +483,6 @@ func _force_update():
 		_set_target(lock_target)
 	else:
 		update()
-	print('force')
-
-func _overwrite_draw():
-	draw_string(normal_font, Vector2(0,0), "HEEELLLO", Color(1,0,0,1))
 
 func _ready():
 	if not normal_font:
@@ -488,6 +498,12 @@ func _ready():
 	#	mono_font = .get_font('font')
 	
 	# surfaces
+	if Engine.editor_hint:
+		#_surface1.add_script(preload("res://addons/balloon/surface1.gd").get_script())
+		#_surface2.add_script(preload("res://addons/balloon/surface2.gd").get_script())
+		#_surface1.connect("draw",_surface1, "ex_update",[vertices,colors,uvs,vertices_shadow,colors_shadow,_arrow_vertices,_arrow_colors,_arrow_uvs,_arrow_vertices_shadow,_arrow_colors_shadow] )
+		_surface1.connect("draw",_surface1, "ex_update",[self] )
+		_surface2.connect("draw",_surface2, "ex_update",[self] )
 	add_child(_surface1)
 	add_child(_surface2)
 	

@@ -60,6 +60,7 @@ var _arrow_target = Vector2()
 var delay = 0
 var is_opened = false
 var _stream = null
+var _text_ctrl = Control.new()
 
 ####################
 #
@@ -324,11 +325,11 @@ func render_text(txt):
 	uvs.append([Vector2(0,0),Vector2(0,0),Vector2(0,0)])
 	var _rad = rad + padding
 	for i in range(resolution):
-		var x0 = cos(a*i)*_rad * _ratio.x
-		var y0 = sin(a*i)*_rad * _ratio.y
-		var x1 = cos((a*i)+a)*_rad * _ratio.x
-		var y1 = sin((a*i)+a)*_rad * _ratio.y
-		vertices.push_back( [Vector2(rad,0), Vector2(x0,y0), Vector2(x1,y1)] )
+		var x0 = rad*_ratio.x + cos(a*i)*_rad * _ratio.x
+		var y0 = rad*_ratio.y + sin(a*i)*_rad * _ratio.y
+		var x1 = rad*_ratio.x + cos((a*i)+a)*_rad * _ratio.x
+		var y1 = rad*_ratio.y + sin((a*i)+a)*_rad * _ratio.y
+		vertices.push_back( [Vector2(rad*_ratio.x,rad*_ratio.y), Vector2(x0,y0), Vector2(x1,y1)] )
 		colors.push_back( [color_center,color,color] )
 		uvs.push_back([Vector2(0,0),Vector2(0,0),Vector2(0,0)])
 	
@@ -338,11 +339,11 @@ func render_text(txt):
 	vertices_shadow.append( [Vector2(0,0),Vector2(0,0),Vector2(0,0)] )
 	colors_shadow.append( [color_shadow,color_shadow,color_shadow] )
 	for i in range(resolution):
-		var x0 = cos(a*i)*_rad * _ratio.x + cos(a*i) * shadown_width
-		var y0 = sin(a*i)*_rad * _ratio.y + sin(a*i) * shadown_width
-		var x1 = cos((a*i)+a)*_rad * _ratio.x + cos((a*i)+a) * shadown_width
-		var y1 = sin((a*i)+a)*_rad * _ratio.y + sin((a*i)+a) * shadown_width
-		vertices_shadow.push_back( [Vector2(0,0), Vector2(x0,y0), Vector2(x1,y1)] )
+		var x0 = rad*_ratio.x + cos(a*i)*_rad * _ratio.x + cos(a*i) * shadown_width
+		var y0 = rad*_ratio.y + sin(a*i)*_rad * _ratio.y + sin(a*i) * shadown_width
+		var x1 = rad*_ratio.x + cos((a*i)+a)*_rad * _ratio.x + cos((a*i)+a) * shadown_width
+		var y1 = rad*_ratio.y + sin((a*i)+a)*_rad * _ratio.y + sin((a*i)+a) * shadown_width
+		vertices_shadow.push_back( [Vector2(rad*_ratio.x,rad*_ratio.y), Vector2(x0,y0), Vector2(x1,y1)] )
 		colors_shadow.push_back( [color_shadow,color_shadow,color_shadow] )
 	
 	extra_offset = Vector2(_rad,_rad) * _ratio
@@ -350,12 +351,22 @@ func render_text(txt):
 	if not arrow_target:
 		update()
 	
+	if Engine.editor_hint:
+		var s = Vector2(round(rad*2),round(rad*2))*_ratio
+		s = Vector2(int(s.x),int(s.y))
+		rect_size = s
+		
+		print(s)
+		print(EditorInterface.get_editor_selection())
+		#rect_min_size = Vector2(1,1)
+		#set("rect/size",Vector2(round(rad),round(rad))*_ratio)
+	
 	return words.size()
 
 func _draw():
 	var _ratio = Vector2(1.0/ratio, ratio)
 	if Engine.editor_hint:
-		draw_texture( preload("res://addons/balloon/assets/icon_balloon.png"), Vector2(-8,-8), Color(1,1,1,1) )
+		draw_texture( preload("res://addons/balloon/assets/icon_balloon.png"), Vector2(-8,-8) + rect_size*0.5, Color(1,1,1,1) )
 		if text=="":
 			var cr = Color("#a5efac")
 			#cr.a = 0.4
@@ -370,7 +381,7 @@ func _draw():
 			#		draw_line( v,n,cr,2 )
 			#		v = n
 			if arrow_target:
-				draw_line( Vector2(-3,9), _arrow_target, Color("#a5efac"), 1 )
+				draw_line( Vector2(-3,7) + rect_size*0.5, _arrow_target, Color("#a5efac"), 1 )
 			return
 		
 	var _arrow_vertices = [Vector2(),Vector2(),Vector2()]
@@ -380,26 +391,27 @@ func _draw():
 	var _arrow_uvs = [Vector2(0,0),Vector2(0,0),Vector2(0,0)]
 	
 	# draw arrow
+	var of = Vector2(rad*_ratio.x,rad*_ratio.y)
 	var _t = _arrow_target
 	if not arrow_target:
 		_t = Vector2( 0,0 )
-	var nor = _t.normalized()
+	var nor = (_t - of).normalized()
 	var per = Vector2(-nor.y,nor.x)
-	_arrow_vertices[0] = _t
-	_arrow_vertices[1] = per * rad * arrow_width*_ratio #Vector2( -rad*0.25, rad/2.0 ) * _ratio
-	_arrow_vertices[2] = per * -rad * arrow_width*_ratio #Vector2( rad*0.25, rad/2.0 ) * _ratio
+	_arrow_vertices[0] = _t - shadown_width*nor
+	_arrow_vertices[1] = per * rad * arrow_width*_ratio + of
+	_arrow_vertices[2] = per * -rad * arrow_width*_ratio + of
 	_arrow_vertices_shadow[0] = _t + shadown_width * nor
-	_arrow_vertices_shadow[1] = per * rad * arrow_width * _ratio + per * shadown_width*_ratio.x #Vector2( -rad*0.25 - shadown_width, rad/2.0 ) * _ratio
-	_arrow_vertices_shadow[2] = per * -rad * arrow_width * _ratio - per * shadown_width*_ratio.x #Vector2( rad*-0.25 + shadown_width, rad/2.0 ) * _ratio
+	_arrow_vertices_shadow[1] = per * rad * arrow_width * _ratio + per * shadown_width*_ratio.x + of
+	_arrow_vertices_shadow[2] = per * -rad * arrow_width * _ratio - per * shadown_width*_ratio.x + of
 	
 	# adjust to fit screen
 	var _offset = Vector2()
-	var left_top = rect_global_position - extra_offset
-	var right_bottom = rect_global_position + extra_offset
-	if left_top.x<0:
-		_offset.x = 0.0 - left_top.x
-	if left_top.y<0:
-		_offset.y = 0.0 - left_top.y
+	var left_top = rect_global_position #- extra_offset
+	var right_bottom = rect_global_position + extra_offset*2.0
+	if left_top.x<(padding + shadown_width):
+		_offset.x = (padding + shadown_width) - left_top.x
+	if left_top.y<(padding + shadown_width):
+		_offset.y = padding + shadown_width - left_top.y
 	if right_bottom.x > get_viewport().get_visible_rect().size.x:
 		_offset.x = -(right_bottom.x - get_viewport().get_visible_rect().size.x)
 	if right_bottom.y > get_viewport().get_visible_rect().size.y:
@@ -419,8 +431,10 @@ func _draw():
 	# text
 	var y = globalY
 	for l in lines:
-		draw_string(font,Vector2(l[0],y),l[1], text_color)
+		draw_string(font,Vector2(l[0],y)+of,l[1], text_color)
 		y += l[2]
+		
+	_text_ctrl.draw_string(normal_font, Vector2(0,0), "HEEELLLO", Color(1,0,0,1))
 		
 
 func _process(delta):
@@ -454,6 +468,9 @@ func _force_update():
 		update()
 	print('force')
 
+func _overwrite_draw():
+	draw_string(normal_font, Vector2(0,0), "HEEELLLO", Color(1,0,0,1))
+
 func _ready():
 	if not normal_font:
 		#normal_font = .get_font('font')
@@ -467,6 +484,9 @@ func _ready():
 	#if not mono_font:
 	#	mono_font = .get_font('font')
 	
+	#_text_ctrl._draw = self._overwrite_draw
+	add_child(_text_ctrl)
+	
 	# prevent wrong initialization
 	set_process(false)
 	
@@ -476,7 +496,7 @@ func _ready():
 	
 	if Engine.editor_hint:
 		update()
-		connect("item_rect_changed",self,"_rec_changed")
+		#connect("item_rect_changed",self,"_rec_changed")
 		return
 	
 	#rect_min_size = Vector2(500,500)

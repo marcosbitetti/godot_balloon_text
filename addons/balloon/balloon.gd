@@ -479,7 +479,9 @@ func _draw():
 func _process(delta):
 	if arrow_target:
 		if _is3D:
-			_arrow_target = get_viewport().get_camera().unproject_position(arrow_target.global_transform.origin) - get_global_transform().origin
+			var cam = get_viewport().get_camera()
+			if cam:
+				_arrow_target = cam.unproject_position(arrow_target.global_transform.origin) - get_global_transform().origin
 		else:
 			_arrow_target = arrow_target.global_position - get_global_transform().origin
 		if _arrow_target != old_tg_pos:

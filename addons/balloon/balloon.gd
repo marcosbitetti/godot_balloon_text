@@ -58,7 +58,7 @@ var of = Vector2()
 var _offset = Vector2()
 var area = 0.0
 var rad = 0.0
-var font = Font.new()
+var font = null
 var lines = []
 var globalY = 0
 var arrow_target = null
@@ -98,10 +98,11 @@ func _set_target(name=""):
 	var lt = str(name)
 	if lt.find('/') != 0:
 		lt = '../' + lt
-	var obj = get_node(lt)
-	if obj:
-		target(obj)
-		update()
+	if has_node(lt):
+		var obj = get_node(lt)
+		if obj:
+			target(obj)
+			update()
 	lock_target = name
 
 func _set_text(txt):
@@ -220,6 +221,7 @@ func say(txt, time=null):
 	delay = time
 	set_process(true)
 	is_opened = true
+	update()
 	show()
 	
 	return time
@@ -376,10 +378,12 @@ func render_text(txt):
 	if not arrow_target:
 		update()
 	
-	if Engine.editor_hint:
+	if Engine.editor_hint and is_inside_tree():
 		var s = Vector2(round(rad*2),round(rad*2))*_ratio
-		s = Vector2(int(s.x),int(s.y))
+		s = s * Vector2(1,1)/get_global_transform().basis_xform_inv(Vector2(1,1))
+		s = Vector2(abs(int(s.x)),abs(int(s.y)))
 		rect_size = s
+		printt(s)
 	
 	return words.size()
 
@@ -400,9 +404,12 @@ func _draw():
 			#		var n = Vector2( rad*cos(a), rad*sin(a) ) * _ratio
 			#		draw_line( v,n,cr,2 )
 			#		v = n
-			if arrow_target:
+			if arrow_target and vertices.size():
 				draw_line( Vector2(-3,7) + rect_size*0.5, _arrow_target, Color("#a5efac"), 1 )
 			return
+	
+	if vertices.size()==0:
+		return
 		
 	_arrow_vertices = [Vector2(),Vector2(),Vector2()]
 	_arrow_colors = [color,color,color]

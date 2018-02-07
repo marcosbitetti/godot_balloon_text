@@ -10,10 +10,14 @@ func ex_update(p):
 	update()
 	
 func _draw():
-	if not p:
+	if not p or not is_inside_tree():
 		return
 	
-	draw_set_transform(p._offset, 0, Vector2(1,1))
+	if p.vertices.size()==0:
+		return
+	
+	var scale = Vector2(1,1)/get_global_transform().basis_xform_inv(Vector2(1,1))
+	draw_set_transform(p._offset*scale, 0, scale)
 		
 	var y = p.globalY
 	for l in p.lines:

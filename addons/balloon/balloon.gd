@@ -117,7 +117,8 @@ func _set_text(txt):
 
 func _set_font(fnt):
 	if not fnt:
-		print('a ',.get_font('font'))
+		if show_debug_messages:
+			print('a ',.get_font('font'))
 		fnt = .get_font('font')
 	normal_font = fnt
 	__need_update()
@@ -270,10 +271,10 @@ func render_text(txt):
 	for k in arr1:
 		var tk
 		if k.find("\n")>-1:
-			if show_debug_messages:
-				for k2 in k.split("\n"):
-					
+			for k2 in k.split("\n"):
+				if show_debug_messages:
 					print(k2)
+				pass
 		else:
 			tk = k
 			letters += tk.length() + 1
@@ -293,16 +294,20 @@ func render_text(txt):
 	# render text
 	#
 	var x = 0
-	var y = ( -rad *_ratio.y ) + (font.get_height() * _ratio.y - font.get_descent())
+	var y = ( -rad *_ratio.y ) + font.get_height() #+ (font.get_height() * _ratio.y) # - font.get_descent()
 	var w = 0
 	var end = words.size()
 	var spc = font.get_string_size(" ")
 	var c_rad = rad
 	
+	if show_debug_messages:
+		printt('initial radius:',rad)
+		
 	while w<end: #y<=rad:
 		#var corda = round(rad * cos(abs(y)/rad))
 		var f = ( rad - abs(y) ) # * _ratio.y
-		var corda = 2.0 * round( sqrt( abs(f * (2.0 * rad - f)) ) ) * _ratio.x
+		var corda = 2.0 * round( sqrt( max( abs(f * (2.0 * rad - f)), abs(f * (2.0 * rad - f - font.get_height()))) ) ) * _ratio.x
+		var corda2 = 2.0 * round( sqrt( min( abs(f * (2.0 * rad - f)), abs(f * (2.0 * rad - f - font.get_height()))) ) ) * _ratio.x
 		var st = ''
 		x = 0
 		while w<end: #x<corda and w<end:
@@ -322,22 +327,37 @@ func render_text(txt):
 		lines.append([c,st,font.get_height()])
 		if show_debug_messages:
 			printt("String size is: ", font.get_string_size(" "))
-		y += font.get_height() * _ratio.x
+		var line_rad = max( sqrt(pow(x*0.5*_ratio.y,2) + pow(y*_ratio.x,2)), sqrt(pow(x*0.5*_ratio.y,2) + pow(y*_ratio.x+font.get_height(),2)) )
+		if line_rad>c_rad:
+			c_rad = line_rad
+		y += font.get_height() #* _ratio.x
 		if show_debug_messages:
 			printt(corda,x, x*_ratio.y*0.5, rad,st, _ratio)
-		if (x*_ratio.y*0.5 + padding) > c_rad:
-			c_rad = rad + ((x*_ratio.y*0.5 + padding) - rad)
-	y -= font.get_descent() / 2.0
+		#if (x*_ratio.y*0.5 + padding) > c_rad:
+		#	c_rad = rad + ((x*_ratio.y*0.5 + padding) - rad)
+		#printt((corda*0.5),(corda2*0.5))
+		#printt('rad0', (pow(x*_ratio.y*0.5,2)+pow(f,2)) / max(f,0.0001)*2 )
+		#printt('rad1', corda,(pow(x*_ratio.y*0.5,2)+pow(f+font.get_height(),2)) / (f+font.get_height())*2 )
+	#y -= font.get_descent() / 2.0
 	#globalY = ( (-rad) - y )/2.0 + spc.y / 2.0 + font.get_ascent()*0.5 - font.get_descent()*0.5
 	#globalY *= _ratio.y
 	#globalY = -((float(lines.size()) * font.get_height())*0.5) + font.get_height()*0.5*_ratio.y + font.get_ascent()*0.5*_ratio.y - font.get_descent()*0.5*_ratio.y - font_height_adjust
 	#globalY = -((float(lines.size()) * font.get_height())*0.5) + font.get_ascent() + font.get_descent() - font_height_adjust
-	globalY = -((float(lines.size()) * font.get_height() - font.get_ascent() - font.get_descent())*0.5) + font_height_adjust
+	#globalY = -((float(lines.size()) * font.get_height() - font.get_ascent() - font.get_descent())*0.5) + font_height_adjust
+	#globalY = -(float(lines.size()) * font.get_height() * 0.5) + float(padding)*0.5*_ratio.x + font.get_height()
+	#globalY = -(float(lines.size()) * font.get_height() ) * 0.5
+	#globalY += (rad*_ratio.y + globalY + font.get_height())*0.5
+	#globalY -= font.get_height()*_ratio.y*0.5
+	rad = c_rad
+	#globalY = font.get_height() - (float(lines.size()) * font.get_height() ) * 0.5
+	globalY = font.get_height() - (rad * _ratio.y - ( rad * 2.0 * _ratio.y - float(lines.size()) * font.get_height() ) * 0.5)
+	#globalY = font.get_height() + -((rad * _ratio.y + font.get_height()) - ( (rad * 2.0 * _ratio.y + font.get_height()) - float(lines.size()) * font.get_height() ) * 0.5)
+	
 	
 	#if c_rad != rad:
 	#	rad = c_rad
 	if show_debug_messages:
-		print(rad)
+		printt('final radius:',rad)
 	
 	# render ballon
 	var resolution = RESOLUTION
@@ -383,7 +403,6 @@ func render_text(txt):
 		s = s * Vector2(1,1)/get_global_transform().basis_xform_inv(Vector2(1,1))
 		s = Vector2(abs(int(s.x)),abs(int(s.y)))
 		rect_size = s
-		printt(s)
 	
 	return words.size()
 
@@ -421,7 +440,7 @@ func _draw():
 	of = Vector2(rad*_ratio.x,rad*_ratio.y)
 	var _t = _arrow_target
 	if not arrow_target:
-		_t = Vector2( 0,0 )
+		_t = of
 	var nor = (_t - of).normalized()
 	var per = Vector2(-nor.y,nor.x)
 	_arrow_vertices[0] = _t - shadown_width*nor

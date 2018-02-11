@@ -21,5 +21,11 @@ func _draw():
 		
 	var y = p.globalY
 	for l in p.lines:
-		draw_string(p.font,Vector2(l[0],y)+p.of,l[1], p.text_color)
+		draw_string(p.font,Vector2(l[0],y-p.font.get_descent())+p.of,l[1], p.text_color)
 		y += l[2]
+	
+	if p.show_debug_messages:
+		y = p.globalY
+		for l in p.lines:
+			draw_rect( Rect2(Vector2(l[0],y-p.font.get_height())+p.of, Vector2(-l[0]-l[0],p.font.get_height()) ), Color(0,1,0,0.2) )
+			y += p.font.get_height()

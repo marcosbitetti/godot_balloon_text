@@ -33,6 +33,7 @@ func handles(obj):
 	_menu.text = 'Balloon'
 	var p = _menu.get_popup()
 	if p.get_item_count()==0:
+		_menu.icon = preload("res://addons/balloon/assets/icon_balloon.png")
 		p.add_item(tr("Help"), 1)
 		p.add_separator()
 		p.add_item(tr("About"), 2)

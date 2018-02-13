@@ -39,8 +39,14 @@ export(int) var words_per_minute = 200 # world median words readed by minute
 export(bool) var auto_hide = true
 export(Material) var balloon_material = null setget _set_balloon_material
 export(Material) var text_material = null setget _set_text_material
+export(NodePath) var script_path = null setget _set_script_path
+export(Theme) var ui_theme = preload("res://addons/balloon/assets/balloon.theme") setget _set_ui_theme
 
 export var show_debug_messages = false
+
+const BALLOON_HIDE_EVENT = "balloon_hide"
+const BALLOON_TRUE = "balloon_true"
+const BALLOON_FALSE = "balloon_false"
 
 const RESOLUTION = 48.0
 
@@ -72,6 +78,11 @@ var _stream = null
 #var _surface1 = preload("res://addons/balloon/background.tscn").instance()
 var _surface1 = preload("res://addons/balloon/surface1.gd").new()
 var _surface2 = preload("res://addons/balloon/surface2.gd").new()
+var _panel = VBoxContainer.new()
+var _script_path = null
+var response1 = null
+var response2 = null
+var responses = []
 
 	
 ####################
@@ -120,6 +131,9 @@ func _set_font(fnt):
 		if show_debug_messages:
 			print('a ',.get_font('font'))
 		fnt = .get_font('font')
+	if ui_theme:
+		#if ui_theme.get_font('font','Button')==.get_font('font'):
+		ui_theme.set_font('font','Button', fnt)
 	normal_font = fnt
 	__need_update()
 
@@ -174,6 +188,25 @@ func _set_text_material(m):
 		_surface2.material = m
 	text_material = m
 	__need_update()
+
+func _set_ui_theme(t):
+	ui_theme = t
+	__need_update()
+
+func _set_script_path(name=null):
+	if name==null:
+		_script_path = null
+		script_path = null
+		return
+	var lt = str(name)
+	if lt.find('/') != 0:
+		name = '../' + lt
+	if has_node(name):
+		_script_path = get_node(name)
+		script_path = name
+	else:
+		_script_path = null
+	script_path = name
 
 #
 # set a target object
@@ -242,9 +275,83 @@ func sat_with_stream(txt, stream):
 # Render spoked text, and whait user interation
 # return time in seconds that baloon remains visible
 #
-func ask(txt, okText = null, okFunc = null, cancelText = null, cancelFunc = null):
+func ask(txt, param1 = null, param2 = null, param3 = null, param4 = null):
 	var t = say(txt)
-	delay = 1000
+	var _ratio = Vector2(1.0/ratio, ratio)
+	
+	if _panel:
+		_panel.queue_free()
+		_panel = null
+	
+	responses.clear()
+	response1 = null
+	response2 = null
+	
+	# mode Yes/No
+	if not param1:
+		_panel = HBoxContainer.new()
+		_panel.alignment = HALIGN_CENTER
+		var yes = Button.new()
+		yes.text = tr('Yes')
+		yes.size_flags_horizontal = SIZE_FILL | SIZE_EXPAND
+		yes.connect("pressed", self, "_button_true_clicked")
+		var no = Button.new()
+		no.text = tr('No')
+		no.size_flags_horizontal = SIZE_FILL | SIZE_EXPAND
+		no.connect("pressed", self, "_button_false_clicked")
+		_panel.add_child(no)
+		_panel.add_child(yes)
+	elif typeof(param1)==TYPE_STRING and typeof(param2)==TYPE_STRING:
+		var yes = Button.new()
+		yes.text = tr( param1 )
+		yes.size_flags_horizontal = SIZE_FILL | SIZE_EXPAND
+		yes.connect("pressed", self, "_button_true_clicked")
+		var no = Button.new()
+		no.text = tr( param2 )
+		no.size_flags_horizontal = SIZE_FILL | SIZE_EXPAND
+		no.connect("pressed", self, "_button_false_clicked")
+		if typeof(param3)==TYPE_STRING:
+			response1 = param3
+		if typeof(param4)==TYPE_STRING:
+			response2 = param4
+		if typeof(param3)==TYPE_INT or (typeof(param2)==TYPE_STRING and typeof(param4)==TYPE_INT):
+			_panel = HBoxContainer.new()
+			_panel.add_child(no)
+			_panel.add_child(yes)
+		else:
+			_panel = VBoxContainer.new()
+			_panel.add_child(yes)
+			_panel.add_child(no)
+		_panel.alignment = HALIGN_CENTER
+	elif typeof(param1)==TYPE_ARRAY:
+		_panel = VBoxContainer.new()
+		_panel.alignment = HALIGN_CENTER
+		var pary_functions = typeof(param2)==TYPE_ARRAY and param2.size()==param1.size()
+		var index = 0
+		for resp in param1:
+			var r = Button.new()
+			r.size_flags_horizontal = SIZE_FILL | SIZE_EXPAND
+			r.text = tr(resp)
+			r.connect("pressed", self, "_button_resp_clicked", [index])
+			_panel.add_child(r)
+			if pary_functions:
+				responses.append(param2[index])
+			index += 1
+		if typeof(param2)==TYPE_STRING:
+			response1 = param2
+	
+	if ui_theme:
+		_panel.theme = ui_theme
+	
+	var size = int( (rad*_ratio.x*2.0) * 0.8 ) # 80%
+	if size < int( (rad*_ratio.x*2.0) * 0.2 ):
+		size = int( (rad*_ratio.x*2.0) * 0.2 ) # 20%
+	_panel.rect_min_size = Vector2(size,_panel.rect_size.y)
+	#_panel.rect_position = Vector2(int(rad*_ratio.x - size*0.5),int(rad*_ratio.y*2.0 + padding*2 + shadown_width) )
+	add_child(_panel)
+		
+	update()
+	delay = 10000
 	
 	return -1
 
@@ -412,23 +519,15 @@ func _draw():
 		draw_texture( preload("res://addons/balloon/assets/icon_balloon.png"), Vector2(-8,-8) + rect_size*0.5, Color(1,1,1,1) )
 		if text=="":
 			var cr = Color("#a5efac")
-			#cr.a = 0.4
-			#if rad>0:
-			#	var r = rad #+ padding
-			#	var a = 0
-			#	var p = (PI*2.0) / RESOLUTION
-			#	var v = Vector2(rad,0) * _ratio
-			#	for i in range(RESOLUTION):
-			#		a += p
-			#		var n = Vector2( rad*cos(a), rad*sin(a) ) * _ratio
-			#		draw_line( v,n,cr,2 )
-			#		v = n
 			if arrow_target and vertices.size():
 				draw_line( Vector2(-3,7) + rect_size*0.5, _arrow_target, Color("#a5efac"), 1 )
 			return
 	
 	if vertices.size()==0:
 		return
+	
+	if _panel and _panel.get_child_count()>0:
+		_panel.rect_position = Vector2(int(_panel.rect_size.x*-0.5 + rad*_ratio.x),int(rad*_ratio.y*2.0 + padding*2 + shadown_width) )
 		
 	_arrow_vertices = [Vector2(),Vector2(),Vector2()]
 	_arrow_colors = [color,color,color]
@@ -524,6 +623,61 @@ func _process(delta):
 				hide()
 
 
+func _button_true_clicked():
+	var p = _script_path
+	if not p:
+		p = get_parent()
+	if response1 and not response2:
+		if p.has_method(response1):
+			p.call_deferred(response1,true)
+	if response1 and response2:
+		if p.has_method(response1):
+			p.call_deferred(response1)
+	emit_signal(BALLOON_TRUE)
+	hide()
+	set_process(false)
+	if show_debug_messages:
+		print('true clicked')
+
+func _button_false_clicked():
+	var p = _script_path
+	if not p:
+		p = get_parent()
+	if response1 and not response2:
+		if p.has_method(response1):
+			p.call_deferred(response1,false)
+	if response1 and response2:
+		if p.has_method(response2):
+			p.call_deferred(response2)
+	emit_signal(BALLOON_FALSE)
+	hide()
+	set_process(false)
+	if show_debug_messages:
+		print('false clicked')
+
+func _button_resp_clicked(index):
+	var nm
+	if responses.size()>0:
+		nm = responses[index]
+	else:
+		if response1:
+			nm = response1
+	var p = _script_path
+	if not p:
+		p = get_parent()
+	if p.has_method(nm):
+		if responses.size()>0:
+			p.call(nm)
+		else:
+			p.call(nm,index)
+	if show_debug_messages:
+		if responses.size()==0:
+			print( 'Option ' + str(index) + ' clicked')
+		else:
+			print( 'Option \"' + nm + '\" clicked')
+	hide()
+	set_process(false)
+
 func _rec_changed():
 	#update()
 	pass
@@ -533,6 +687,12 @@ func _force_update():
 		_set_target(lock_target)
 	else:
 		update()
+
+func _init():
+	set_meta("type","balloon")
+	add_user_signal(BALLOON_TRUE)
+	add_user_signal(BALLOON_FALSE)
+	add_user_signal(BALLOON_HIDE_EVENT)
 
 func _ready():
 	if not normal_font:

@@ -525,9 +525,6 @@ func _draw():
 	
 	if vertices.size()==0:
 		return
-	
-	if _panel and _panel.get_child_count()>0:
-		_panel.rect_position = Vector2(int(_panel.rect_size.x*-0.5 + rad*_ratio.x),int(rad*_ratio.y*2.0 + padding*2 + shadown_width) )
 		
 	_arrow_vertices = [Vector2(),Vector2(),Vector2()]
 	_arrow_colors = [color,color,color]
@@ -557,17 +554,26 @@ func _draw():
 	
 	# adjust to fit screen
 	_offset = Vector2()
+	var _offset_p = Vector2()
+	if _panel and _panel.get_child_count()>0:
+		_offset_p = _panel.rect_size
 	var left_top = rect_global_position #- extra_offset
 	var right_bottom = rect_global_position + extra_offset*2.0
 	if left_top.x<(padding + shadown_width):
 		_offset.x = (padding + shadown_width) - left_top.x
 	if left_top.y<(padding + shadown_width):
 		_offset.y = padding + shadown_width - left_top.y
-	if right_bottom.x > get_viewport().get_visible_rect().size.x:
+	if (right_bottom.x+_offset_p.x) > get_viewport().get_visible_rect().size.x:
 		_offset.x = -(right_bottom.x - get_viewport().get_visible_rect().size.x)
-	if right_bottom.y > get_viewport().get_visible_rect().size.y:
-		_offset.y = -(right_bottom.y - get_viewport().get_visible_rect().size.y)
+		if _panel and _panel.get_child_count()>0:
+			_offset.x -= _offset_p.x*0.5-rad
+	if (right_bottom.y+_offset_p.y) > get_viewport().get_visible_rect().size.y:
+		_offset.y = -(right_bottom.y - get_viewport().get_visible_rect().size.y) - _offset_p.y
 	draw_set_transform(_offset, 0, Vector2(1,1))
+	printt(_offset_p,_offset)
+		
+	if _panel and _panel.get_child_count()>0:
+		_panel.rect_position = Vector2(int(_panel.rect_size.x*-0.5 + rad*_ratio.x)+_offset.x,int(rad*_ratio.y*2.0 + padding*2 + shadown_width)+_offset.y )
 	
 	# shadow
 	#draw_primitive( _arrow_vertices_shadow, _arrow_colors_shadow, _arrow_uvs, null)

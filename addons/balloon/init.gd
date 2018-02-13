@@ -19,9 +19,9 @@ func item_selected(id):
 	var p = get_editor_interface().get_editor_viewport()
 	match id:
 		1:
-			OS.shell_open("http://htmlpreview.github.io/?https://github.com/marcosbitetti/godot_balloon_text/blob/master/addons/balloon/help.html")
+			OS.shell_open("http://htmlpreview.github.io/?https://github.com/marcosbitetti/godot_balloon_text/blob/master/addons/balloon/docs/help.html")
 		2:
-			OS.shell_open("http://htmlpreview.github.io/?https://github.com/marcosbitetti/godot_balloon_text/blob/master/addons/balloon/about.html")
+			OS.shell_open("http://htmlpreview.github.io/?https://github.com/marcosbitetti/godot_balloon_text/blob/master/addons/balloon/docs/about.html")
 	
 
 func handles(obj):

@@ -37,6 +37,7 @@ export(Font) var normal_font = null setget _set_font
 export(NodePath) var lock_target = null setget _set_target
 export(int) var words_per_minute = 200 # world median words readed by minute
 export(bool) var auto_hide = true
+export(bool) var bubble_effect = false setget _set_bubble_effect
 export(Material) var balloon_material = null setget _set_balloon_material
 export(Material) var text_material = null setget _set_text_material
 export(NodePath) var script_path = null setget _set_script_path
@@ -75,6 +76,8 @@ var _arrow_target = Vector2()
 var delay = 0
 var is_opened = false
 var _stream = null
+var _tweener = Tween.new()
+var _bubble_extra = Vector2(1,1)
 #var _surface1 = preload("res://addons/balloon/background.tscn").instance()
 var _surface1 = preload("res://addons/balloon/surface1.gd").new()
 var _surface2 = preload("res://addons/balloon/surface2.gd").new()
@@ -84,7 +87,15 @@ var response1 = null
 var response2 = null
 var responses = []
 
-	
+var config = {
+	effects = {
+		bubble = {
+			initial = Vector2(1.45,1.45),
+			duration = 0.6,
+		}
+	}
+}
+
 ####################
 #
 #  Gettes/Setters
@@ -107,7 +118,7 @@ func _set_target(name=""):
 		return
 		
 	var lt = str(name)
-	if lt.find('/') != 0:
+	if lt.find('../') != 0 and lt.find('/')!=0:
 		lt = '../' + lt
 	if has_node(lt):
 		var obj = get_node(lt)
@@ -117,6 +128,8 @@ func _set_target(name=""):
 	lock_target = name
 
 func _set_text(txt):
+	lines.clear()
+	vertices.clear()
 	if not txt:
 		txt = ""
 	text = txt
@@ -207,6 +220,19 @@ func _set_script_path(name=null):
 	else:
 		_script_path = null
 	script_path = name
+
+func _set_bubble_effect(v):
+	if not v:
+		v = false
+	else:
+		v = true
+	bubble_effect = v
+	if bubble_effect:
+		add_child(_tweener)
+		_tweener.interpolate_method( self,"_bubble", config.effects.bubble.initial, Vector2(1,1), config.effects.bubble.duration, Tween.TRANS_ELASTIC, Tween.EASE_OUT)
+	else:
+		if _tweener.get_parent():
+			remove_child(_tweener)
 
 #
 # set a target object
@@ -369,6 +395,8 @@ func get_font(fnt):
 		_: return normal_font #normal_font
 	
 func render_text(txt):
+	if not txt or txt.length()==0:
+		return -1
 	var _ratio = Vector2(1.0/ratio, ratio)
 	var arr1 = txt.strip_edges().split(" ")
 	var letters = 0
@@ -440,29 +468,9 @@ func render_text(txt):
 		y += font.get_height() #* _ratio.x
 		if show_debug_messages:
 			printt(corda,x, x*_ratio.y*0.5, rad,st, _ratio)
-		#if (x*_ratio.y*0.5 + padding) > c_rad:
-		#	c_rad = rad + ((x*_ratio.y*0.5 + padding) - rad)
-		#printt((corda*0.5),(corda2*0.5))
-		#printt('rad0', (pow(x*_ratio.y*0.5,2)+pow(f,2)) / max(f,0.0001)*2 )
-		#printt('rad1', corda,(pow(x*_ratio.y*0.5,2)+pow(f+font.get_height(),2)) / (f+font.get_height())*2 )
-	#y -= font.get_descent() / 2.0
-	#globalY = ( (-rad) - y )/2.0 + spc.y / 2.0 + font.get_ascent()*0.5 - font.get_descent()*0.5
-	#globalY *= _ratio.y
-	#globalY = -((float(lines.size()) * font.get_height())*0.5) + font.get_height()*0.5*_ratio.y + font.get_ascent()*0.5*_ratio.y - font.get_descent()*0.5*_ratio.y - font_height_adjust
-	#globalY = -((float(lines.size()) * font.get_height())*0.5) + font.get_ascent() + font.get_descent() - font_height_adjust
-	#globalY = -((float(lines.size()) * font.get_height() - font.get_ascent() - font.get_descent())*0.5) + font_height_adjust
-	#globalY = -(float(lines.size()) * font.get_height() * 0.5) + float(padding)*0.5*_ratio.x + font.get_height()
-	#globalY = -(float(lines.size()) * font.get_height() ) * 0.5
-	#globalY += (rad*_ratio.y + globalY + font.get_height())*0.5
-	#globalY -= font.get_height()*_ratio.y*0.5
 	rad = c_rad
-	#globalY = font.get_height() - (float(lines.size()) * font.get_height() ) * 0.5
 	globalY = font.get_height() - (rad * _ratio.y - ( rad * 2.0 * _ratio.y - float(lines.size()) * font.get_height() ) * 0.5)
-	#globalY = font.get_height() + -((rad * _ratio.y + font.get_height()) - ( (rad * 2.0 * _ratio.y + font.get_height()) - float(lines.size()) * font.get_height() ) * 0.5)
 	
-	
-	#if c_rad != rad:
-	#	rad = c_rad
 	if show_debug_messages:
 		printt('final radius:',rad)
 	
@@ -473,7 +481,6 @@ func render_text(txt):
 	vertices.clear()
 	colors.clear()
 	uvs.clear()
-	#arrow_index = vertices.size()
 	vertices.append( [Vector2(0,0),Vector2(0,0),Vector2(0,0)] )
 	colors.append( [color_center,color,color] )
 	uvs.append([Vector2(0.5,0.5),Vector2(0.5,0.5),Vector2(0.5,0.5)])
@@ -511,7 +518,15 @@ func render_text(txt):
 		s = Vector2(abs(int(s.x)),abs(int(s.y)))
 		rect_size = s
 	
+	if _tweener.get_parent():
+		_tweener.reset_all()
+		_tweener.start()
 	return words.size()
+
+func _bubble(v):
+	_bubble_extra = v
+	if lines.size()>0:
+		update()
 
 func _draw():
 	var _ratio = Vector2(1.0/ratio, ratio)
@@ -523,9 +538,27 @@ func _draw():
 				draw_line( Vector2(-3,7) + rect_size*0.5, _arrow_target, Color("#a5efac"), 1 )
 			return
 	
-	if vertices.size()==0:
+	if vertices.size()==0 or lines.size()==0:
 		return
-		
+	
+		# adjust to fit screen
+	var left_top = rect_global_position #- extra_offset
+	var right_bottom = rect_global_position + extra_offset*2.0
+	var computed_size = Vector2(right_bottom.x-left_top.x,right_bottom.y-left_top.y)
+	if _panel and _panel.get_child_count()>0:
+		computed_size.x = max(computed_size.x,_panel.rect_size.x)
+		computed_size.y = computed_size.y + _panel.rect_size.y + padding
+	_offset = Vector2()
+	
+	if left_top.x<(padding + shadown_width):
+		_offset.x = (padding + shadown_width) - left_top.x
+	if left_top.y<(padding + shadown_width):
+		_offset.y = padding + shadown_width - left_top.y
+	if (left_top.x+computed_size.x-padding-shadown_width) > get_viewport().get_visible_rect().size.x:
+		_offset.x = -((left_top.x+computed_size.x) - get_viewport().get_visible_rect().size.x)
+	if (left_top.y+computed_size.y-padding-shadown_width) > get_viewport().get_visible_rect().size.y:
+		_offset.y = -((left_top.y+computed_size.y) - get_viewport().get_visible_rect().size.y)
+
 	_arrow_vertices = [Vector2(),Vector2(),Vector2()]
 	_arrow_colors = [color,color,color]
 	_arrow_vertices_shadow = [Vector2(),Vector2(),Vector2()]
@@ -539,12 +572,16 @@ func _draw():
 		_t = of
 	var nor = (_t - of).normalized()
 	var per = Vector2(-nor.y,nor.x)
-	_arrow_vertices[0] = _t - shadown_width*nor
+	_arrow_vertices[0] = _t - shadown_width*nor - _offset
 	_arrow_vertices[1] = per * _ratio * (rad+padding) * arrow_width + of
 	_arrow_vertices[2] = per * _ratio * (-rad-padding) * arrow_width + of
-	_arrow_vertices_shadow[0] = _t + shadown_width * nor
+	_arrow_vertices_shadow[0] = _t + shadown_width * nor - _offset
 	_arrow_vertices_shadow[1] = per * (rad+padding) * arrow_width * _ratio + per * shadown_width*_ratio.x + of
 	_arrow_vertices_shadow[2] = per * (-rad-padding) * arrow_width * _ratio - per * shadown_width*_ratio.x + of
+	if _bubble_extra!=Vector2(1,1):
+		var _v = Vector2(1,1)/_bubble_extra
+		_arrow_vertices[0] *= _v
+		_arrow_vertices_shadow[0] *= _v
 	nor = (_t - of).normalized() #_t.normalized()
 	per = Vector2(-nor.y,nor.x)
 	_arrow_uvs[0] = Vector2(0.5,0.5) + nor*((((_t-of)).length()-padding-rad)/rad)*0.5 #+ nor*0.5
@@ -552,59 +589,18 @@ func _draw():
 	_arrow_uvs[1] = Vector2(0.5,0.5) + per * arrow_width * 0.5
 	_arrow_uvs[2] = Vector2(0.5,0.5) - per * arrow_width * 0.5
 	
-	# adjust to fit screen
-	_offset = Vector2()
-	var _offset_p = Vector2()
-	if _panel and _panel.get_child_count()>0:
-		_offset_p = _panel.rect_size
-	var left_top = rect_global_position #- extra_offset
-	var right_bottom = rect_global_position + extra_offset*2.0
-	if left_top.x<(padding + shadown_width):
-		_offset.x = (padding + shadown_width) - left_top.x
-	if left_top.y<(padding + shadown_width):
-		_offset.y = padding + shadown_width - left_top.y
-	if (right_bottom.x+_offset_p.x) > get_viewport().get_visible_rect().size.x:
-		_offset.x = -(right_bottom.x - get_viewport().get_visible_rect().size.x)
-		if _panel and _panel.get_child_count()>0:
-			_offset.x -= _offset_p.x*0.5-rad
-	if (right_bottom.y+_offset_p.y) > get_viewport().get_visible_rect().size.y:
-		_offset.y = -(right_bottom.y - get_viewport().get_visible_rect().size.y) - _offset_p.y
 	draw_set_transform(_offset, 0, Vector2(1,1))
-	printt(_offset_p,_offset)
 		
 	if _panel and _panel.get_child_count()>0:
-		_panel.rect_position = Vector2(int(_panel.rect_size.x*-0.5 + rad*_ratio.x)+_offset.x,int(rad*_ratio.y*2.0 + padding*2 + shadown_width)+_offset.y )
+		_panel.rect_position = Vector2(int(((_panel.rect_size.x*-0.5 + rad*_ratio.x)+_offset.x)*_bubble_extra.x),int(((rad*_ratio.y*2.0 + padding*2 + shadown_width)+_offset.y)*_bubble_extra.y) )
 	
-	# shadow
-	#draw_primitive( _arrow_vertices_shadow, _arrow_colors_shadow, _arrow_uvs, null)
-	#for i in range(vertices.size()):
-	#	draw_primitive( vertices_shadow[i],colors_shadow[i],uvs[i],null )
-	
-	# background
-	#draw_primitive( _arrow_vertices, _arrow_colors, _arrow_uvs, null)
-	#for i in range(vertices.size()):
-	#	draw_primitive( vertices[i],colors[i],uvs[i],null )
-	
-	#_surface2.of = of
-	#printt(_surface1,_surface1.ex_update)
-	#_surface1.ex_update(vertices,colors,uvs,vertices_shadow,colors_shadow,_arrow_vertices,_arrow_colors,_arrow_uvs,_arrow_vertices_shadow,_arrow_colors_shadow)
-	#_surface2.ex_update(font,lines,globalY,text_color,of)
-	#_surface1.update()
-	#_surface2.update()
 	if _surface1:
-		if Engine.editor_hint:
+		if Engine.editor_hint and _surface1.has_method('ex_update'):
 			_surface1.emit_signal("draw")
 			_surface2.emit_signal("draw")
 		else:
 			_surface1.ex_update(self)
 			_surface2.ex_update(self)
-	
-	# text
-	#var y = globalY
-	#for l in lines:
-	#	draw_string(font,Vector2(l[0],y)+of,l[1], text_color)
-	#	y += l[2]
-
 
 
 func _process(delta):

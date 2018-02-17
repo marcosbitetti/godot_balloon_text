@@ -30,6 +30,9 @@ func handles(obj):
 			_menu.get_parent().remove_child(_menu)
 		return false
 	
+	if _menu.is_inside_tree():
+		return true
+		
 	_menu.text = 'Balloon'
 	var p = _menu.get_popup()
 	if p.get_item_count()==0:

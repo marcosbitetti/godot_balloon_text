@@ -16,10 +16,10 @@ func _draw():
 	if p.vertices.size()==0:
 		return
 	
-	var scale = Vector2(1,1)/get_global_transform().basis_xform_inv(Vector2(1,1))
+	var scale = Vector2(1,1)/get_global_transform().basis_xform_inv(Vector2(1,1)) * p._bubble_extra
 	draw_set_transform(p._offset*scale, 0, scale)
 		
-	var y = p.globalY
+	var y = p.globalY - p.font_height_adjust
 	for l in p.lines:
 		draw_string(p.font,Vector2(l[0],y-p.font.get_descent())+p.of,l[1], p.text_color)
 		y += l[2]

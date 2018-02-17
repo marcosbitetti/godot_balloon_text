@@ -16,7 +16,7 @@ func _draw():
 	if p.vertices.size()==0:
 		return
 		
-	var scale = Vector2(1,1)/get_global_transform().basis_xform_inv(Vector2(1,1))
+	var scale = Vector2(1,1)/get_global_transform().basis_xform_inv(Vector2(1,1)) * p._bubble_extra
 	draw_set_transform(p._offset*scale, 0, scale)
 	
 	# shadow

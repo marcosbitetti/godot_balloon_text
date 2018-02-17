@@ -12,7 +12,8 @@ func ex_update(p):
 func _draw():
 	if not p or not is_inside_tree():
 		return
-	
+	if Engine.editor_hint and not p.get('vertices'):
+		return
 	if p.vertices.size()==0:
 		return
 		

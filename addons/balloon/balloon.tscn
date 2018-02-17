@@ -1,6 +1,8 @@
-[gd_scene load_steps=2 format=2]
+[gd_scene load_steps=4 format=2]
 
 [ext_resource path="res://addons/balloon/balloon.gd" type="Script" id=1]
+[ext_resource path="res://addons/balloon/assets/OpenComicFont.tres" type="DynamicFont" id=2]
+[ext_resource path="res://addons/balloon/assets/balloon.theme" type="Theme" id=3]
 
 [node name="balloon" type="Control" index="0"]
 
@@ -8,8 +10,8 @@ anchor_left = 0.0
 anchor_top = 0.0
 anchor_right = 0.0
 anchor_bottom = 0.0
-margin_right = 40.0
-margin_bottom = 40.0
+margin_right = 92.0
+margin_bottom = 92.0
 rect_pivot_offset = Vector2( 0, 0 )
 mouse_filter = 0
 mouse_default_cursor_shape = 0
@@ -17,20 +19,29 @@ size_flags_horizontal = 1
 size_flags_vertical = 1
 script = ExtResource( 1 )
 _sections_unfolded = [ "BBCode" ]
+__meta__ = {
+"type": "balloon"
+}
 text = "Testing the script"
 ratio = 1.0
-font_height_adjust = 0
-padding = 8
-shadown_width = 4
+font_height_adjust = 0.0
+padding = 8.0
+shadown_width = 4.0
 text_color = Color( 0, 0, 0, 1 )
 color = Color( 1, 1, 1, 1 )
 color_center = Color( 1, 1, 1, 1 )
 color_shadow = Color( 0, 0, 0, 1 )
 arrow_width = 0.25
-normal_font = null
+normal_font = ExtResource( 2 )
 lock_target = null
 words_per_minute = 200
+typewriter = false
 auto_hide = true
+bubble_effect = false
+balloon_material = null
+text_material = null
+script_path = null
+ui_theme = ExtResource( 3 )
 show_debug_messages = false
 
 

@@ -36,6 +36,7 @@ export(Font) var normal_font = null setget _set_font
 #export(Font) var mono_font
 export(NodePath) var lock_target = null setget _set_target
 export(int) var words_per_minute = 200 # world median words readed by minute
+export (bool) var typewriter = false
 export(bool) var auto_hide = true
 export(bool) var bubble_effect = false setget _set_bubble_effect
 export(Material) var balloon_material = null setget _set_balloon_material
@@ -50,6 +51,20 @@ const BALLOON_TRUE = "balloon_true"
 const BALLOON_FALSE = "balloon_false"
 
 const RESOLUTION = 48.0
+
+var config = {
+	effects = {
+		bubble = {
+			initial = Vector2(1.45,1.45),
+			duration = 0.6,
+		},
+		
+		typewriter = {
+			time = 1.0/15
+		}
+	},
+	resolution = RESOLUTION
+}
 
 var vertices = Array()
 var colors = Array()
@@ -86,15 +101,9 @@ var _script_path = null
 var response1 = null
 var response2 = null
 var responses = []
-
-var config = {
-	effects = {
-		bubble = {
-			initial = Vector2(1.45,1.45),
-			duration = 0.6,
-		}
-	}
-}
+var _typewritter_offset = 0
+var _typewritter_delay = 0
+var _letter_count = 0
 
 ####################
 #
@@ -227,12 +236,13 @@ func _set_bubble_effect(v):
 	else:
 		v = true
 	bubble_effect = v
-	if bubble_effect:
-		add_child(_tweener)
-		_tweener.interpolate_method( self,"_bubble", config.effects.bubble.initial, Vector2(1,1), config.effects.bubble.duration, Tween.TRANS_ELASTIC, Tween.EASE_OUT)
-	else:
-		if _tweener.get_parent():
-			remove_child(_tweener)
+	if not Engine.editor_hint:
+		if bubble_effect:
+			add_child(_tweener)
+			_tweener.interpolate_method( self,"_bubble", config.effects.bubble.initial, Vector2(1,1), config.effects.bubble.duration, Tween.TRANS_ELASTIC, Tween.EASE_OUT)
+		else:
+			if _tweener.get_parent():
+				remove_child(_tweener)
 
 #
 # set a target object
@@ -403,6 +413,7 @@ func render_text(txt):
 	var longString = ''
 	var words = []
 	lines.clear()
+	
 	for k in arr1:
 		var tk
 		if k.find("\n")>-1:
@@ -424,6 +435,8 @@ func render_text(txt):
 	var _area = font.get_string_size(longString)
 	area = float(_area.x * _area.y)
 	rad = sqrt(float(area) / PI) * 1.00 + font.get_height()
+	
+	_letter_count = txt.length()
 	
 	#
 	# render text
@@ -469,7 +482,7 @@ func render_text(txt):
 		if show_debug_messages:
 			printt(corda,x, x*_ratio.y*0.5, rad,st, _ratio)
 	rad = c_rad
-	globalY = font.get_height() - (rad * _ratio.y - ( rad * 2.0 * _ratio.y - float(lines.size()) * font.get_height() ) * 0.5)
+	globalY = font.get_height() - (rad * _ratio.y - ( rad * 2.0 * _ratio.y - float(lines.size()) * font.get_height() ) * 0.5) + font_height_adjust
 	
 	if show_debug_messages:
 		printt('final radius:',rad)
@@ -518,9 +531,16 @@ func render_text(txt):
 		s = Vector2(abs(int(s.x)),abs(int(s.y)))
 		rect_size = s
 	
-	if _tweener.get_parent():
-		_tweener.reset_all()
-		_tweener.start()
+	# runtime effects
+	if not Engine.editor_hint:
+		if typewriter:
+			_typewritter_offset = 0
+			_typewritter_delay = config.effects.typewriter.time
+		
+		if _tweener.get_parent():
+			_tweener.reset_all()
+			_tweener.start()
+	
 	return words.size()
 
 func _bubble(v):
@@ -623,7 +643,16 @@ func _process(delta):
 				set_process(false)
 				is_opened = false
 				hide()
-
+	
+	# runtime effects
+	if not Engine.editor_hint:
+		if typewriter:
+			_typewritter_delay -= delta
+			if _typewritter_delay<=0:
+				_typewritter_delay = config.effects.typewriter.time
+				_typewritter_offset += 1
+				if _typewritter_offset<=_letter_count:
+					update()
 
 func _button_true_clicked():
 	var p = _script_path

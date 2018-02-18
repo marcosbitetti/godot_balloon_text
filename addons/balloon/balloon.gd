@@ -29,7 +29,7 @@ export(Color) var color = Color(1,1,1,1) setget _set_color
 export(Color) var color_center = Color(1,1,1,1) setget _set_color_center
 export(Color) var color_shadow = Color(0,0,0,1) setget _set_color_shadow
 export(float) var arrow_width = 0.25 setget _set_arrow_width
-export(Font) var normal_font = null setget _set_font
+export(Font) var normal_font = preload("res://addons/balloon/assets/OpenComicFont.tres") setget _set_font
 #export(Font) var bold_font
 #export(Font) var italics_font
 #export(Font) var bold_italics_font

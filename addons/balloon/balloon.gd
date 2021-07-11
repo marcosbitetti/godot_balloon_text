@@ -396,7 +396,7 @@ func ask(txt, param1 = null, param2 = null, param3 = null, param4 = null):
 #
 # Overrides get_font
 #
-func get_font(fnt):
+func get_font(fnt, notused=''):
 	match fnt:
 		#'bold_font': return bold_font
 		#'italics_font': return italics_font
